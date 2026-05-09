@@ -1,21 +1,19 @@
 <script lang="ts">
-	import { CreditCard, Lock, CheckCircle } from 'lucide-svelte';
+	import { CreditCard, ShieldCheck, MapPin, User as UserIcon } from 'lucide-svelte';
 	let { data } = $props();
 
-	// Estados usando Runas
 	let processing = $state(false);
 	let completed = $state(false);
-	let cardData = $state({
-		number: '',
-		expiry: '',
-		cvc: '',
-		name: ''
-	});
 
-	// Derivado: Validar si el botón de pago debe estar activo
-	let isValid = $derived(
-		cardData.number.length >= 16 && cardData.cvc.length >= 3 && cardData.name.length > 3
-	);
+	// Estado para el método seleccionado (por defecto la primera tarjeta guardada)
+	let selectedMethodId = $state(data.methods[0]?.id || 'new');
+
+	// Estado reactivo para el formulario, precargado con datos de Supabase
+	let billingName = $state(data.profile.full_name || data.session?.user?.name || '');
+	let billingAddress = $state(data.profile.address || '');
+
+	// Derivado: Buscar la tarjeta seleccionada para mostrar detalles
+	let selectedMethod = $derived(data.methods.find((m) => m.id === selectedMethodId));
 
 	async function handlePayment() {
 		processing = true;
@@ -24,6 +22,8 @@
 		const response = await fetch('/api/save-payment', {
 			method: 'POST',
 			body: JSON.stringify({
+				store: data.paymentData.store,
+				date: new Date().toDateString(),
 				amount: data.paymentData.amount,
 				description: data.paymentData.orderId,
 				user_id: data.session?.user?.id || 'anonymous'
@@ -34,95 +34,154 @@
 			processing = false;
 			completed = true;
 		}
+		else {
+			console.log(data.session?.user?.id || 'anonymous');
+		}
 	}
 </script>
 
-<div class="mx-auto my-10 max-w-xl rounded-2xl border border-gray-100 bg-white p-8 shadow-xl">
-	{#if !completed}
-		<header class="mb-8">
-			<h1 class="text-2xl font-bold text-gray-800">Finalizar Pago</h1>
-			<p class="text-gray-500">Orden: {data.paymentData.orderId}</p>
-			<div class="mt-4 flex items-center justify-between rounded-lg bg-indigo-50 p-4">
-				<span class="font-medium text-indigo-900">Total a pagar:</span>
-				<span class="text-2xl font-black text-indigo-600">${data.paymentData.amount}</span>
-			</div>
-		</header>
-
-		<form
-			onsubmit={(e) => {
-				e.preventDefault();
-				handlePayment();
-			}}
-			class="space-y-4"
-		>
-			<div>
-				<label class="block text-sm font-semibold text-gray-600">Nombre en Tarjeta</label>
-				<input
-					bind:value={cardData.name}
-					type="text"
-					class="mt-1 w-full rounded-lg border p-3 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
-					placeholder="Nombre completo"
-					required
-				/>
-			</div>
-
-			<div>
-				<label class="block text-sm font-semibold text-gray-600">Número de Tarjeta</label>
-				<div class="relative">
-					<input
-						bind:value={cardData.number}
-						type="text"
-						maxlength="16"
-						class="mt-1 w-full rounded-lg border p-3 pl-12 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
-						placeholder="0000 0000 0000 0000"
-						required
-					/>
-					<CreditCard class="absolute top-4 left-4 size-5 text-gray-400" />
+<div class="mx-auto my-10 max-w-4xl px-4">
+	<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+		<!-- Columna Izquierda: Resumen de Compra -->
+		<div class="space-y-6">
+			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+				<h2 class="mb-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
+					Resumen del Pedido
+				</h2>
+				<div class="mb-2 flex items-center justify-between">
+					<span class="text-gray-600">{data.paymentData.store}</span>
+					<span class="font-bold">#{data.paymentData.orderId}</span>
+				</div>
+				<div class="mt-4 border-t pt-4">
+					<div class="flex items-end justify-between">
+						<span class="text-sm text-gray-500">Total a pagar:</span>
+						<span class="text-3xl font-black text-indigo-600">${data.paymentData.amount}</span>
+					</div>
 				</div>
 			</div>
 
-			<div class="grid grid-cols-2 gap-4">
-				<input
-					bind:value={cardData.expiry}
-					type="text"
-					placeholder="MM/YY"
-					class="rounded-lg border p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-					required
-				/>
-				<input
-					bind:value={cardData.cvc}
-					type="password"
-					maxlength="3"
-					placeholder="CVC"
-					class="rounded-lg border p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-					required
-				/>
+			<div class="rounded-2xl bg-indigo-900 p-6 text-indigo-100 shadow-xl">
+				<ShieldCheck class="mb-4 size-8 text-indigo-400" />
+				<p class="text-sm font-medium">Pago Protegido</p>
+				<p class="mt-1 text-xs opacity-70">
+					Esta transacción está encriptada mediante un KMS de terceros y autenticada vía SSO.
+				</p>
 			</div>
-
-			<button
-				type="submit"
-				disabled={!isValid || processing}
-				class="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-4 font-bold text-white shadow-lg transition-all hover:bg-indigo-700 disabled:bg-gray-300"
-			>
-				{#if processing}
-					<div class="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
-					Procesando...
-				{:else}
-					<Lock size={18} /> Pagar Ahora
-				{/if}
-			</button>
-		</form>
-	{:else}
-		<div class="animate-in fade-in zoom-in py-10 text-center duration-500">
-			<CheckCircle class="mx-auto mb-4 size-20 text-green-500" />
-			<h2 class="text-3xl font-bold text-gray-800">¡Pago Confirmado!</h2>
-			<p class="mt-2 text-gray-500">El recibo ha sido enviado a tu correo.</p>
-			<a
-				href="/dashboard"
-				class="mt-8 inline-block rounded-full bg-gray-900 px-8 py-3 text-white transition-colors hover:bg-gray-800"
-			>
-				Ir a mis movimientos
-			</a>
 		</div>
-	{/if}
+
+		<!-- Columna Derecha: Formulario de Pago -->
+		<div class="md:col-span-2">
+			{#if !completed}
+				<div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+					<div class="p-8">
+						<h1 class="mb-6 text-2xl font-bold text-gray-900">Información de Pago</h1>
+
+						<!-- Selección de Tarjeta Guardada -->
+						{#if data.methods.length > 0}
+							<div class="mb-8">
+								<label class="mb-3 block text-sm font-bold text-gray-400 uppercase"
+									>Mis Tarjetas Guardadas</label
+								>
+								<div class="grid grid-cols-1 gap-3">
+									{#each data.methods as method}
+										<button
+											onclick={() => (selectedMethodId = method.id)}
+											class="flex items-center justify-between rounded-xl border-2 p-4 transition-all {selectedMethodId ===
+											method.id
+												? 'border-indigo-600 bg-indigo-50'
+												: 'border-gray-100 hover:border-gray-200'}"
+										>
+											<div class="flex items-center gap-4">
+												<CreditCard
+													class={selectedMethodId === method.id
+														? 'text-indigo-600'
+														: 'text-gray-400'}
+												/>
+												<div class="text-left">
+													<p class="font-bold text-gray-900">
+														{method.provider} **** {method.last_four}
+													</p>
+													<p class="text-xs text-gray-500 uppercase">{method.holder_name}</p>
+												</div>
+											</div>
+											{#if selectedMethodId === method.id}
+												<div
+													class="flex size-5 items-center justify-center rounded-full bg-indigo-600"
+												>
+													<div class="size-2 rounded-full bg-white"></div>
+												</div>
+											{/if}
+										</button>
+									{/each}
+									<button
+										onclick={() => (selectedMethodId = 'new')}
+										class="rounded-xl border-2 border-dashed p-4 text-sm font-medium text-gray-500 transition-all hover:bg-gray-50"
+									>
+										+ Usar otra tarjeta
+									</button>
+								</div>
+							</div>
+						{/if}
+
+						<!-- Datos de Facturación (Precargados de Supabase) -->
+						<div class="space-y-4">
+							<h3 class="flex items-center gap-2 font-bold text-gray-900">
+								<UserIcon size={18} class="text-gray-400" />
+								Confirmar Datos de Facturación
+							</h3>
+							<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+								<div class="space-y-1">
+									<span class="text-xs font-bold text-gray-400 uppercase">Nombre</span>
+									<input
+										bind:value={billingName}
+										class="w-full rounded-xl border border-gray-200 bg-gray-50 p-3"
+									/>
+								</div>
+								<div class="space-y-1">
+									<span class="text-xs font-bold text-gray-400 uppercase">Dirección</span>
+									<input
+										bind:value={billingAddress}
+										class="w-full rounded-xl border border-gray-200 bg-gray-50 p-3"
+									/>
+								</div>
+							</div>
+						</div>
+
+						<button
+							onclick={handlePayment}
+							disabled={processing}
+							class="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-indigo-600 py-4 font-black text-white shadow-xl shadow-indigo-100 transition-all hover:bg-indigo-700 disabled:bg-gray-300"
+						>
+							{#if processing}
+								<div class="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
+								PROCESANDO PAGO SEGURO...
+							{:else}
+								PAGAR ${data.paymentData.amount}
+							{/if}
+						</button>
+					</div>
+				</div>
+			{:else}
+				<!-- Estado de éxito (igual que antes) -->
+				<div
+					class="animate-in zoom-in rounded-2xl border border-gray-100 bg-white p-12 text-center shadow-sm duration-300"
+				>
+					<div
+						class="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-green-100 text-green-600"
+					>
+						<ShieldCheck size={40} />
+					</div>
+					<h2 class="text-3xl font-black text-gray-900">¡Transacción Exitosa!</h2>
+					<p class="mt-2 text-gray-500">
+						Los datos se han guardado en Postgres y el Sistema A ha sido notificado.
+					</p>
+					<a
+						href="/dashboard"
+						class="mt-8 inline-block rounded-full bg-gray-900 px-10 py-4 font-bold text-white"
+						>Volver al Portal</a
+					>
+				</div>
+			{/if}
+		</div>
+	</div>
 </div>

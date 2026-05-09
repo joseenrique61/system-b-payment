@@ -3,15 +3,12 @@
     
     // Simulación de datos que vendrían de Postgres vía Supabase
     let search = $state('');
-    let transactions = $state([
-        { id: 1, shop: 'Ferretería Central', date: '2023-10-25', amount: 45.00, status: 'Completado' },
-        { id: 2, shop: 'Ferretería Central', date: '2023-10-24', amount: 120.50, status: 'Completado' },
-        { id: 3, shop: 'Portal Pagos (Fee)', date: '2023-10-20', amount: 2.00, status: 'Completado' },
-    ]);
 
     // Rune $derived para filtrar transacciones en tiempo real
-    let filteredTransactions = $derived(
-        transactions.filter(t => t.shop.toLowerCase().includes(search.toLowerCase()))
+    let filtered = $derived(
+        data.payments.filter(p => 
+            p.description.toLowerCase().includes(search.toLowerCase())
+        )
     );
 </script>
 
@@ -40,9 +37,9 @@
                 </tr>
             </thead>
             <tbody>
-                {#each filteredTransactions as item}
+                {#each filtered as item}
                     <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td class="p-4 font-medium">{item.shop}</td>
+                        <td class="p-4 font-medium">{item.store}</td>
                         <td class="p-4 text-gray-500">{item.date}</td>
                         <td class="p-4 font-bold text-gray-900">${item.amount.toFixed(2)}</td>
                         <td class="p-4">
