@@ -30,6 +30,20 @@ services:
     networks:
       - keycloak-network
 
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "my-root-token" # Token para pruebas
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      SKIP_SETCAP: 1
+    # cap_add:
+    #   - IPC_LOCK
+    networks:
+      - keycloak-network
+
 networks:
   keycloak-network:
     driver: bridge

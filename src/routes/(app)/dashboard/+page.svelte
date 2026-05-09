@@ -37,7 +37,7 @@
                 </tr>
             </thead>
             <tbody>
-                {#each filtered as item}
+                {#each filtered as item (item)}
                     <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td class="p-4 font-medium">{item.store}</td>
                         <td class="p-4 text-gray-500">{item.date}</td>

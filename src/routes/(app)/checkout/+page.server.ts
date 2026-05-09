@@ -12,7 +12,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     let paymentData = { amount: 0, orderId: 'N/A', store: 'Ferretería' };
 
     if (encryptedToken) {
-        paymentData = JSON.parse(await kmsService.decrypt(encryptedToken));
+        const payload = await kmsService.decrypt(encryptedToken);
+        paymentData = payload;
     }
 
     // 2. Obtener Perfil de Facturación desde Supabase

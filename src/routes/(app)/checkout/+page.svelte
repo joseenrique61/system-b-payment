@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { CreditCard, ShieldCheck, MapPin, User as UserIcon } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
 	let { data } = $props();
 
 	let processing = $state(false);
@@ -13,7 +14,7 @@
 	let billingAddress = $state(data.profile.address || '');
 
 	// Derivado: Buscar la tarjeta seleccionada para mostrar detalles
-	let selectedMethod = $derived(data.methods.find((m) => m.id === selectedMethodId));
+	// let selectedMethod = $derived(data.methods.find((m) => m.id === selectedMethodId));
 
 	async function handlePayment() {
 		processing = true;
@@ -83,7 +84,7 @@
 									>Mis Tarjetas Guardadas</label
 								>
 								<div class="grid grid-cols-1 gap-3">
-									{#each data.methods as method}
+									{#each data.methods as method (method.id)}
 										<button
 											onclick={() => (selectedMethodId = method.id)}
 											class="flex items-center justify-between rounded-xl border-2 p-4 transition-all {selectedMethodId ===
@@ -176,7 +177,7 @@
 						Los datos se han guardado en Postgres y el Sistema A ha sido notificado.
 					</p>
 					<a
-						href="/dashboard"
+						href={resolve("/dashboard")}
 						class="mt-8 inline-block rounded-full bg-gray-900 px-10 py-4 font-bold text-white"
 						>Volver al Portal</a
 					>

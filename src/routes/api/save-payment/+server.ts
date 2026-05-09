@@ -4,7 +4,7 @@ import { supabase } from '$lib/supabase';
 export async function POST({ request }) {
 	const { store, date, amount, description, user_id } = await request.json();
 
-	const { data, error } = await supabase
+	const { error } = await supabase
 		.from('payments') // Nombre de tu tabla en Supabase
 		.insert([
 			{

@@ -1,22 +1,21 @@
-import crypto from 'node:crypto';
+import { VAULT_ADDR, VAULT_TOKEN } from "$env/static/private";
 
-// En un entorno real, estas llaves vendrían de un KMS de terceros
-const FAKE_KMS_KEY = crypto.scryptSync('mi-password-secreto', 'salt', 32);
-const IV = crypto.randomBytes(16);
+const KEY_NAME = 'payments-key';
 
 export const kmsService = {
-    // Simula encriptación (Lo usaría el Sistema A)
-    encrypt: async (text: string) => {
-        const cipher = crypto.createCipheriv('aes-256-cbc', FAKE_KMS_KEY, IV);
-        let encrypted = cipher.update(text, 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        return encrypted;
-    },
-    // Simula desencriptación (Lo usa el Sistema B - este portal)
-    decrypt: async (encryptedText: string) => {
-        const decipher = crypto.createDecipheriv('aes-256-cbc', FAKE_KMS_KEY, IV);
-        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        return decrypted;
+    decrypt: async (ciphertext: string) => {
+        const response = await fetch(`${VAULT_ADDR}/v1/transit/decrypt/${KEY_NAME}`, {
+            method: 'POST',
+            headers: { 'X-Vault-Token': VAULT_TOKEN },
+            body: JSON.stringify({ ciphertext })
+        });
+
+        const json = await response.json();
+        // Vault devuelve Base64, lo convertimos a texto plano
+        console.log(json)
+        const base64Plaintext = json.data.plaintext;
+        const base64 = Buffer.from(base64Plaintext, 'base64').toString('utf-8');
+        const jsonPayload = JSON.parse(base64);
+        return jsonPayload;
     }
 };
