@@ -1,9 +1,12 @@
-<script lang="ts">
+<script>
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
-
-	let { children } = $props();
+	import Navbar from '$lib/components/Navbar.svelte';
+	let { data, children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{@render children()}
+<div class="min-h-screen bg-slate-50/50">
+	<Navbar session={data.session} />
+	<main>
+		{@render children()}
+	</main>
+</div>
