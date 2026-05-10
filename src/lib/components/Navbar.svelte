@@ -1,11 +1,10 @@
 <script lang="ts">
     import { signOut } from "@auth/sveltekit/client";
-    import { CreditCard, LayoutDashboard, Settings, LogOut, User } from "lucide-svelte";
+    import { CreditCard, LogOut, User } from "lucide-svelte";
     import { page } from '$app/state';
 
     // Svelte 5: Recibimos la sesión desde el layout
     let { session } = $props();
-    let isMenuOpen = $state(false);
 
     // Derivado para saber en qué página estamos
     let activePath = $derived(page.url.pathname);
