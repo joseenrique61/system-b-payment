@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
+	import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
 	let { data } = $props();
 
 	let processing = $state(false);
@@ -13,8 +13,31 @@ import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
 	let billingName = $state(data.profile.full_name || data.session?.user?.name || '');
 	let billingAddress = $state(data.profile.address || '');
 
-	// Derivado: Buscar la tarjeta seleccionada para mostrar detalles
-	// let selectedMethod = $derived(data.methods.find((m) => m.id === selectedMethodId));
+	let ciphertext = '';
+
+	let countdown = $state(3);
+	let startTimer = $state(false);
+	$effect(() => {
+		if (startTimer) {
+			// timerStarted = true;
+			const interval = setInterval(() => {
+				if (countdown > 0) {
+					countdown--;
+				} else {
+					clearInterval(interval);
+					// Redirigir automáticamente al Sistema A
+					redirectToBusiness();
+				}
+			}, 1000);
+
+			// Limpieza del intervalo si el componente se destruye
+			return () => clearInterval(interval);
+		}
+	});
+
+	function redirectToBusiness() {
+		window.location.href = `${data.paymentData.redirectUrl.substring(0, data.paymentData.redirectUrl.length - 1)}/PurchaseOrder/Buy?token=${ciphertext}`;
+	}
 
 	async function handlePayment() {
 		processing = true;
@@ -31,13 +54,33 @@ import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
 			})
 		});
 
-		if (response.ok) {
-			processing = false;
-			completed = true;
+		if (!response.ok) {
+			console.error('An error occurred while saving the payment');
+			return;
 		}
-		else {
-			console.log(data.session?.user?.id || 'anonymous');
-		}
+
+		await new Promise((r) => setTimeout(r, 1000));
+
+		// 2. Preparar payload de confirmación
+		const confirmationPayload = {
+			userId: data.paymentData.userId, // El ID que guardamos en la DB de SvelteKit
+			status: 'PAID_SUCCESS'
+		};
+
+		// 3. ENCRIPTAR con Vault (Llamada al servidor de SvelteKit que usa el kmsService)
+		const responseKms = await fetch('/api/encrypt-confirmation', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(confirmationPayload)
+		});
+		const { token } = await responseKms.json();
+		ciphertext = token;
+
+		processing = false;
+		completed = true;
+		startTimer = true;
 	}
 </script>
 
@@ -176,8 +219,15 @@ import { CreditCard, ShieldCheck, User as UserIcon } from 'lucide-svelte';
 					<p class="mt-2 text-gray-500">
 						Los datos se han guardado en Postgres y el Sistema A ha sido notificado.
 					</p>
+					<button
+						onclick={() => {
+							redirectToBusiness();
+						}}
+						class="mt-8 inline-block rounded-full bg-gray-900 px-10 py-4 font-bold text-white"
+						>Volver al Negocio ({countdown}s)</button
+					>
 					<a
-						href={resolve("/dashboard")}
+						href={resolve('/dashboard')}
 						class="mt-8 inline-block rounded-full bg-gray-900 px-10 py-4 font-bold text-white"
 						>Volver al Portal</a
 					>

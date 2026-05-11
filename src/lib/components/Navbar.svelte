@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { signOut } from "@auth/sveltekit/client";
     import { CreditCard, LogOut, User } from "lucide-svelte";
     import { page } from '$app/state';
 
@@ -43,13 +42,13 @@
                         </div>
                     </div>
                     
-                    <button 
-                        onclick={() => signOut()}
+                    <a 
                         class="p-2 text-gray-400 hover:text-red-600 transition-colors"
                         title="Cerrar Sesión"
+                        href="/logout"
                     >
                         <LogOut size={20} />
-                    </button>
+                    </a>
                 {:else}
                     <a href="/login" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Entrar</a>
                 {/if}

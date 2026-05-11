@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
     // 1. Obtener datos de la compra (Desencriptar con KMS)
     const encryptedToken = url.searchParams.get('token');
-    let paymentData = { amount: 0, orderId: 'N/A', store: 'Ferretería' };
+    let paymentData = { amount: 0, orderId: 'N/A', store: 'Ferretería', timestamp: "", userId: "1", redirectUrl: "" };
 
     if (encryptedToken) {
         const payload = await kmsService.decrypt(encryptedToken);
