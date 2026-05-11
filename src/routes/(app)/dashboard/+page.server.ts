@@ -6,7 +6,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     const session = await locals.auth();
     
     // Si no hay sesión, el layout ya redirige, pero por seguridad:
-    console.log(session)
     if (!session?.user?.id) throw error(401, 'No autorizado');
 
     // Consultar pagos reales de este usuario en Postgres
