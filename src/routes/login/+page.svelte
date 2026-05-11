@@ -6,7 +6,7 @@
 
     function handleLogin() {
         isLoading = true;
-        signIn("keycloak", { callbackUrl: "/dashboard" });
+        signIn("keycloak", { callbackUrl: "/" });
     }
 </script>
 

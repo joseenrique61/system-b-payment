@@ -22,7 +22,7 @@
 					<span class="hidden tracking-tight text-gray-900 md:block">PAY-PORTAL</span>
 				</a>
 
-				{#if session?.user}
+				{#if session?.user && !session.user.roles.includes("admin")}
 					<div class="hidden sm:ml-10 sm:flex sm:space-x-8">
 						<a
 							href={resolve('/dashboard')}
